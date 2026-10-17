@@ -19,6 +19,37 @@ def init_db() -> None:
             session_id TEXT PRIMARY KEY, problem_id TEXT, problem_title TEXT, topic TEXT,
             difficulty TEXT, total_score INTEGER, verdict TEXT, hints_used INTEGER,
             duration_sec INTEGER, transcript TEXT, scores TEXT, report TEXT, created_at TEXT)""")
+        c.execute("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT)")
+        c.execute("""CREATE TABLE IF NOT EXISTS quiz_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, subject TEXT, topic TEXT, difficulty TEXT,
+            score INTEGER, total INTEGER, created_at TEXT)""")
+
+
+def kv_get(key: str):
+    with _conn() as c:
+        r = c.execute("SELECT value FROM kv WHERE key = ?", (key,)).fetchone()
+    return json.loads(r["value"]) if r else None
+
+
+def kv_set(key: str, value) -> None:
+    with _conn() as c:
+        c.execute("INSERT OR REPLACE INTO kv VALUES (?, ?)", (key, json.dumps(value)))
+
+
+def save_quiz_result(subject: str, topic: str, difficulty: str, score: int, total: int) -> None:
+    with _conn() as c:
+        c.execute("INSERT INTO quiz_results (subject, topic, difficulty, score, total, created_at) VALUES (?,?,?,?,?,?)",
+                  (subject, topic, difficulty, score, total, datetime.now().isoformat(timespec="seconds")))
+
+
+def quiz_stats() -> dict:
+    with _conn() as c:
+        rows = [dict(r) for r in c.execute(
+            "SELECT subject, topic, difficulty, score, total, created_at FROM quiz_results ORDER BY created_at DESC LIMIT 50")]
+    if not rows:
+        return {"count": 0, "accuracy": 0, "recent": []}
+    return {"count": len(rows), "accuracy": round(100 * sum(r["score"] for r in rows) / max(1, sum(r["total"] for r in rows))),
+            "recent": rows[:8]}
 
 
 def save_session(state: dict) -> None:

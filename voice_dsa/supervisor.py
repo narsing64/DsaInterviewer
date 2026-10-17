@@ -15,7 +15,8 @@ from pathlib import Path
 from . import agents, db
 from .llm import speak
 
-PROBLEMS = json.loads((Path(__file__).parent / "problems.json").read_text(encoding="utf-8"))["problems"]
+PROBLEMS = [p for f in ("problems.json", "more_problems.json")
+            for p in json.loads((Path(__file__).parent / f).read_text(encoding="utf-8"))["problems"]]
 STAGES = ["clarify", "probe", "coding", "done"]
 MIN_PROBES, MAX_PROBES = 2, 5
 
@@ -23,7 +24,10 @@ SESSIONS: dict = {}
 
 
 def topics() -> dict:
-    return {"topics": sorted({p["topic"] for p in PROBLEMS}), "difficulties": ["easy", "medium", "hard"]}
+    counts: dict = {}
+    for p in PROBLEMS:
+        counts[p["topic"]] = counts.get(p["topic"], 0) + 1
+    return {"topics": sorted(counts), "counts": counts, "total": len(PROBLEMS), "difficulties": ["easy", "medium", "hard"]}
 
 
 def _log(state: dict, role: str, content: str, agent: str | None = None) -> None:
@@ -43,7 +47,7 @@ def _respond(state: dict, text: str, agent: str, voice: str, **extra) -> dict:
     return {"reply": text, "agent": agent, "audio": speak(text, voice), "state": _snapshot(state), **extra}
 
 
-def start(topic: str | None, difficulty: str | None) -> dict:
+def start(topic: str | None, difficulty: str | None, voice: str = "shubh") -> dict:
     pool = [p for p in PROBLEMS if (not topic or p["topic"] == topic) and (not difficulty or p["difficulty"] == difficulty)]
     if not pool:
         raise ValueError("No problems match that topic/difficulty.")
@@ -51,7 +55,7 @@ def start(topic: str | None, difficulty: str | None) -> dict:
     state = {
         "id": uuid.uuid4().hex, "problem": problem, "stage": "clarify", "transcript": [], "algorithm": "",
         "complexity": "", "edge_cases": [], "confidence": "", "clarifying_questions": 0, "probes": 0, "hints": 0,
-        "code_reviews": [], "scores": None, "report": None, "started": time.time(), "duration_sec": 0, "voice": "shubh",
+        "code_reviews": [], "scores": None, "report": None, "started": time.time(), "duration_sec": 0, "voice": voice, "interviewer": voice.split("_")[0].capitalize(),
     }
     SESSIONS[state["id"]] = state
     out = _respond(state, agents.presenter(state), "presenter", state["voice"])

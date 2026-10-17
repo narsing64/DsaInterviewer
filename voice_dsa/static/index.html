@@ -3,251 +3,117 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Voice DSA Interviewer</title>
-<style>
-:root { --bg:#f6f7f9; --card:#fff; --ink:#1c1f24; --mute:#667085; --line:#e3e6ea; --brand:#2563eb; --good:#16a34a; --bad:#dc2626; --warn:#d97706; --chip:#eef2ff; }
-@media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --card:#181b21; --ink:#e8eaed; --mute:#9aa3b2; --line:#2a2f38; --brand:#6b9bff; --chip:#1f2a44; } }
-* { box-sizing:border-box; }
-body { margin:0; font-family:system-ui,-apple-system,Segoe UI,sans-serif; background:var(--bg); color:var(--ink); }
-header { display:flex; align-items:center; gap:16px; padding:12px 20px; border-bottom:1px solid var(--line); background:var(--card); }
-header h1 { font-size:1.05rem; margin:0; } header nav { margin-left:auto; display:flex; gap:8px; }
-main { max-width:1180px; margin:0 auto; padding:20px 16px; }
-.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
-button { font:inherit; padding:.55rem 1rem; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; }
-button.primary { background:var(--brand); border-color:var(--brand); color:#fff; }
-button.danger { color:var(--bad); } button:disabled { opacity:.5; cursor:default; }
-button.rec { background:var(--bad); border-color:var(--bad); color:#fff; }
-select, textarea, input[type=text] { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:.5rem; width:100%; }
-textarea { resize:vertical; } .code { font-family:ui-monospace,Consolas,monospace; font-size:.9rem; }
-.hidden { display:none !important; }
-.grid { display:grid; grid-template-columns:340px 1fr; gap:16px; } @media (max-width:860px) { .grid { grid-template-columns:1fr; } }
-.chip { display:inline-block; background:var(--chip); border-radius:999px; padding:2px 10px; margin:2px 4px 2px 0; font-size:.8rem; }
-.mute { color:var(--mute); font-size:.85rem; } h3 { margin:.2rem 0 .5rem; font-size:.95rem; }
-.steps { display:flex; gap:6px; margin-bottom:12px; } .step { flex:1; text-align:center; padding:6px; border-radius:8px; background:var(--chip); font-size:.8rem; color:var(--mute); }
-.step.on { background:var(--brand); color:#fff; } .step.past { color:var(--good); }
-#log { height:360px; overflow-y:auto; padding:4px; }
-.msg { margin:8px 0; padding:8px 12px; border-radius:10px; white-space:pre-wrap; max-width:92%; }
-.msg.bot { background:var(--chip); } .msg.me { background:var(--bg); border:1px solid var(--line); margin-left:auto; }
-.msg small { display:block; color:var(--mute); font-size:.72rem; margin-bottom:2px; }
-.row { display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap; }
-.bar { height:8px; border-radius:4px; background:var(--line); overflow:hidden; flex:1; } .bar i { display:block; height:100%; background:var(--brand); }
-.stat { text-align:center; flex:1; } .stat b { font-size:1.6rem; display:block; }
-.overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); overflow-y:auto; padding:24px 12px; z-index:5; }
-.overlay .card { max-width:720px; margin:0 auto; } ul { margin:.3rem 0 .8rem; padding-left:1.2rem; }
-.big { font-size:2.4rem; font-weight:700; } .verdict { padding:2px 12px; border-radius:999px; color:#fff; }
-.toast { color:var(--bad); font-size:.85rem; }
-</style>
+<title>InterviewAI — Voice Mock Interviews</title>
+<link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<header>
-  <h1>🎙️ Voice DSA Interviewer</h1>
-  <nav><button id="navNew">New interview</button><button id="navHist">History</button></nav>
-</header>
-<main>
+<nav class="nav">
+  <div class="brand"><i>🎙</i><span>InterviewAI</span></div>
+  <a class="tab" href="#interview" data-page="interview">Interview</a>
+  <a class="tab" href="#learn" data-page="learn">Learn</a>
+  <a class="tab" href="#quiz" data-page="quiz">Quiz</a>
+  <a class="tab" href="#progress" data-page="progress">Progress</a>
+  <span class="sp"></span>
+  <button class="icon-btn" id="themeBtn" title="Toggle theme">🌓</button>
+</nav>
 
-<!-- setup -->
-<section id="setup" class="card" style="max-width:520px;margin:40px auto">
-  <h2 style="margin-top:0">Start a mock interview</h2>
-  <p class="mute">Speak your answers. A team of agents — presenter, clarifier, prober, hinter, code reviewer, evaluator and coach — runs the interview and scores you.</p>
-  <label class="mute">Topic</label><select id="topic"><option value="">Any topic</option></select>
-  <label class="mute">Difficulty</label><select id="difficulty"><option value="">Any difficulty</option><option>easy</option><option>medium</option><option>hard</option></select>
-  <label class="mute">Interviewer voice</label>
-  <select id="voice"><option value="shubh">Shubh (male)</option><option value="aditya">Aditya (male)</option><option value="kabir">Kabir (male)</option><option value="ritu">Ritu (female)</option><option value="priya">Priya (female)</option><option value="simran">Simran (female)</option></select>
-  <label class="row"><input type="checkbox" id="speakOn" checked> Interviewer speaks aloud</label>
-  <div class="row"><button class="primary" id="startBtn">Start interview</button><span id="setupMsg" class="toast"></span></div>
-</section>
+<main class="wrap">
 
-<!-- interview -->
-<section id="interview" class="hidden">
-  <div class="steps" id="steps"></div>
-  <div class="grid">
-    <div>
-      <div class="card">
-        <h3 id="pTitle"></h3><div id="pChips"></div>
-        <p id="pDesc" style="font-size:.9rem"></p><p class="mute" id="pCons"></p>
-        <div class="row mute">⏱ <b id="timer">00:00</b></div>
-      </div>
-      <div class="card" style="margin-top:12px">
-        <h3>Live signals</h3>
-        <div class="mute">Approach</div><div id="sAlgo" class="chip">—</div>
-        <div class="mute">Complexity</div><div id="sCx" class="chip">—</div>
-        <div class="mute">Edge cases</div><div id="sEdge"><span class="chip">—</span></div>
-        <div class="mute" style="margin-top:6px">Follow-ups answered: <b id="sProbe">0</b> · Hints used: <b id="sHint">0</b></div>
-      </div>
+<!-- INTERVIEW: setup -->
+<section id="page-interview">
+  <div id="setup">
+    <div class="hero">
+      <h1>Practice interviews that <b>talk back</b></h1>
+      <p>Speak your answers. A team of AI agents asks follow-ups, reviews your code and scores you, in a voice that sounds like a real interviewer.</p>
+      <div class="pills"><span class="pill" id="pillCount">44 problems</span><span class="pill">Voice in, voice out</span><span class="pill">Powered by Sarvam AI</span></div>
     </div>
-    <div>
-      <div class="card">
-        <div id="log"></div>
-        <div class="row">
-          <button id="mic">🎤 Start speaking</button>
-          <input type="text" id="text" placeholder="…or type your answer" style="flex:1">
-          <button id="send">Send</button>
-        </div>
-        <div class="row"><button id="hint">💡 Hint</button><button id="end" class="danger">End &amp; get feedback</button><span id="status" class="mute"></span></div>
+    <div class="card setup">
+      <label class="lbl" style="margin-top:0">Topic</label>
+      <div class="topics" id="topicChips"></div>
+      <label class="lbl">Difficulty</label>
+      <div class="seg" id="diffSeg"></div>
+      <div class="row" style="margin-top:6px">
+        <div class="grow"><label class="lbl">Interviewer</label>
+          <select id="voice"><option value="shubh">Shubh</option><option value="aditya">Aditya</option><option value="kabir">Kabir</option><option value="ritu">Ritu</option><option value="priya">Priya</option><option value="simran">Simran</option></select></div>
       </div>
-      <div class="card" style="margin-top:12px">
-        <h3>Code editor <span class="mute">(any language — submit when ready)</span></h3>
-        <textarea id="code" class="code" rows="10" spellcheck="false" placeholder="# write your solution here"></textarea>
-        <div class="row"><button class="primary" id="submitCode">Submit code</button></div>
-        <div id="review" class="mute" style="margin-top:8px"></div>
+      <label class="row" style="margin-top:14px"><input type="checkbox" id="handsFree" checked> <span><b>Hands-free</b> — I listen automatically after the interviewer finishes, and send when you stop talking</span></label>
+      <label class="row" style="margin-top:8px"><input type="checkbox" id="speakOn" checked> <span>Interviewer speaks aloud</span></label>
+      <div class="row" style="margin-top:18px"><button class="primary lg" id="startBtn">Start interview</button><span id="setupMsg" class="toast"></span></div>
+    </div>
+    <div class="agents" id="agentList"></div>
+  </div>
+
+  <!-- INTERVIEW: room -->
+  <div id="room" class="hidden">
+    <div class="steps" id="steps"></div>
+    <div class="room">
+      <div>
+        <div class="tiles">
+          <div class="tile" id="tileBot">
+            <span class="state" id="botState">Ready</span>
+            <div class="orb" id="orb"></div>
+            <div class="caption" id="caption"></div>
+            <span class="who" id="botName">Interviewer</span>
+          </div>
+          <div class="tile" id="tileMe">
+            <span class="state" id="meState">Mic off</span>
+            <div class="meter" id="meter"></div>
+            <div class="hint-line" id="meHint">Your turn will start automatically</div>
+            <span class="who">You</span>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div id="log"></div>
+          <div class="row" style="margin-top:10px">
+            <button id="mic">🎤 Answer</button>
+            <input type="text" id="text" placeholder="…or type your answer" class="grow">
+            <button id="send">Send</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button id="hint">💡 Hint</button>
+            <button id="end" class="danger">End &amp; get feedback</button>
+            <label class="row tight mute"><input type="checkbox" id="handsFree2"> Hands-free</label>
+            <span id="status" class="mute"></span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3 id="pTitle"></h3><div id="pChips"></div>
+          <p id="pDesc" style="font-size:.93rem"></p><p class="mute" id="pCons"></p>
+          <div class="row mute">⏱ <b id="timer">00:00</b></div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <h3>What I've picked up from you</h3>
+          <div class="sig">
+            <b>Approach</b><div id="sAlgo"><span class="chip">—</span></div>
+            <b>Complexity</b><div id="sCx"><span class="chip">—</span></div>
+            <b>Edge cases</b><div id="sEdge"><span class="chip">—</span></div>
+            <b>Progress</b><div class="mute">Follow-ups answered: <b id="sProbe">0</b> · Hints: <b id="sHint">0</b></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <h3>Code editor <span class="mute">(any language)</span></h3>
+          <textarea id="code" class="code" rows="11" spellcheck="false" placeholder="# write your solution here, then press Submit code"></textarea>
+          <div class="row" style="margin-top:8px"><button class="primary" id="submitCode">Submit code</button></div>
+          <div id="review" class="mute" style="margin-top:8px"></div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- history -->
-<section id="history" class="hidden"></section>
+<!-- LEARN -->
+<section id="page-learn" class="hidden"></section>
+<!-- QUIZ -->
+<section id="page-quiz" class="hidden"></section>
+<!-- PROGRESS -->
+<section id="page-progress" class="hidden"></section>
+
 </main>
 
-<!-- scorecard -->
 <div id="score" class="overlay hidden"><div class="card" id="scoreBody"></div></div>
 <audio id="player"></audio>
-
-<script>
-const $ = id => document.getElementById(id);
-const STEPS = [["clarify","1 Clarify"],["probe","2 Follow-ups"],["coding","3 Code"],["done","4 Feedback"]];
-let sid = null, busy = false, recorder = null, chunks = [], timerId = null, t0 = 0, lastResult = null;
-
-function el(tag, text, cls) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; }
-async function api(path, body, retry = true) {
-  let code = ""; try { code = sessionStorage.getItem("code") || ""; } catch (e) {}
-  const opts = { headers: { "X-Access-Code": code } };
-  if (body) { opts.method = "POST"; opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
-  const r = await fetch(path, opts);
-  if (r.status === 401 && retry) {
-    const c = prompt("Enter the access code to use this app:");
-    if (c) { try { sessionStorage.setItem("code", c); } catch (e) {} return api(path, body, false); }
-  }
-  const d = await r.json(); if (d.error) throw new Error(d.error); return d;
-}
-function show(which) { ["setup","interview","history"].forEach(s => $(s).classList.toggle("hidden", s !== which)); }
-function setBusy(b) { busy = b; ["send","hint","end","submitCode","mic","text"].forEach(i => $(i).disabled = b); $("status").textContent = b ? "Thinking…" : ""; }
-
-/* ---- setup ---- */
-api("/api/topics").then(d => d.topics.forEach(t => { const o = el("option", t.replace(/_/g, " ")); o.value = t; $("topic").appendChild(o); }));
-$("startBtn").onclick = async () => {
-  $("startBtn").disabled = true; $("setupMsg").textContent = "Starting…";
-  try {
-    const d = await api("/api/start", { topic: $("topic").value, difficulty: $("difficulty").value });
-    sid = d.session_id; await api("/api/voice", { session_id: sid, voice: $("voice").value });
-    $("log").replaceChildren(); $("code").value = ""; $("review").textContent = "";
-    $("pTitle").textContent = d.problem.title; $("pDesc").textContent = d.problem.description; $("pCons").textContent = "Constraints: " + d.problem.constraints;
-    $("pChips").replaceChildren(el("span", d.problem.difficulty, "chip"), el("span", d.problem.topic.replace(/_/g, " "), "chip"));
-    show("interview"); t0 = Date.now(); clearInterval(timerId);
-    timerId = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $("timer").textContent = String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0"); }, 1000);
-    addBot(d); update(d.state); $("setupMsg").textContent = "";
-  } catch (e) { $("setupMsg").textContent = e.message; }
-  $("startBtn").disabled = false;
-};
-
-/* ---- rendering ---- */
-function addMsg(who, text, agent) {
-  const m = el("div", undefined, "msg " + who); m.appendChild(el("small", agent || (who === "me" ? "you" : ""))); m.appendChild(document.createTextNode(text));
-  $("log").appendChild(m); $("log").scrollTop = $("log").scrollHeight;
-}
-function addBot(d) {
-  if (!d.reply) return; addMsg("bot", d.reply, "🤖 " + d.agent);
-  if (d.audio && $("speakOn").checked) { $("player").src = "data:audio/wav;base64," + d.audio; $("player").play().catch(() => {}); }
-}
-function update(s) {
-  const idx = STEPS.findIndex(x => x[0] === s.stage);
-  $("steps").replaceChildren(...STEPS.map((x, i) => el("div", x[1], "step" + (i === idx ? " on" : i < idx ? " past" : ""))));
-  $("sAlgo").textContent = s.algorithm || "—"; $("sCx").textContent = s.complexity || "—";
-  $("sEdge").replaceChildren(...(s.edge_cases.length ? s.edge_cases : ["—"]).map(e => el("span", e, "chip")));
-  $("sProbe").textContent = s.probes; $("sHint").textContent = s.hints;
-}
-
-/* ---- turns ---- */
-async function turn(payload, shown) {
-  if (busy) return; setBusy(true);
-  try {
-    const d = await api("/api/turn", { session_id: sid, ...payload });
-    const said = d.transcript || shown;
-    if (said) addMsg("me", said);
-    if (d.reply) { addBot(d); update(d.state); } else if (payload.audio) $("status").textContent = "Didn't catch that — try again.";
-    if (d.review) showReview(d.review);
-    $("text").value = "";
-    if (d.result) { clearInterval(timerId); showScore(d.result); setBusy(true); $("status").textContent = "Interview finished"; return; }
-  } catch (e) { $("status").textContent = "Error: " + e.message; }
-  setBusy(false);
-}
-function showReview(r) {
-  if (!r) return;
-  $("review").textContent = (r.correct ? "✅ Looks correct. " : "⚠️ Issues found. ") + "Time " + r.time_complexity + ", space " + r.space_complexity + ". " + (r.bugs.length ? "Bugs: " + r.bugs.join("; ") : "");
-}
-$("send").onclick = () => { const t = $("text").value.trim(); if (t) turn({ text: t }, t); };
-$("text").addEventListener("keydown", e => { if (e.key === "Enter") $("send").click(); });
-$("hint").onclick = () => turn({ text: "Can I get a hint?" }, "Can I get a hint?");
-$("end").onclick = () => { if (confirm("End the interview and get your feedback?")) turn({ text: "", end: true }, "(ended the interview)"); };
-$("submitCode").onclick = () => { if ($("code").value.trim()) turn({ text: "", code: $("code").value }, "(submitted code)"); };
-$("code").addEventListener("keydown", e => { if (e.key === "Tab") { e.preventDefault(); const t = e.target, s = t.selectionStart; t.value = t.value.slice(0, s) + "    " + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 4; } });
-
-/* ---- mic (click to start, click to send) ---- */
-$("mic").onclick = async () => {
-  if (recorder && recorder.state === "recording") { recorder.stop(); return; }
-  if (busy) return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recorder = new MediaRecorder(stream); chunks = [];
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop());
-      $("mic").classList.remove("rec"); $("mic").textContent = "🎤 Start speaking";
-      const blob = new Blob(chunks, { type: recorder.mimeType });
-      const b64 = await new Promise(res => { const f = new FileReader(); f.onload = () => res(f.result.split(",")[1]); f.readAsDataURL(blob); });
-      turn({ audio: b64, mime: blob.type.split(";")[0] }, "");
-    };
-    recorder.start(); $("player").pause(); $("mic").classList.add("rec"); $("mic").textContent = "■ Stop & send";
-  } catch (e) { $("status").textContent = "Microphone unavailable: " + e.message; }
-};
-
-/* ---- scorecard ---- */
-function showScore(r) {
-  lastResult = r; const ev = r.scores, rep = r.report, body = $("scoreBody"); body.replaceChildren();
-  const color = ev.verdict === "Strong" ? "var(--good)" : ev.verdict === "Average" ? "var(--warn)" : "var(--bad)";
-  const top = el("div", undefined, "row"); top.append(el("span", ev.total + "/10", "big"), el("span", ev.verdict, "verdict"));
-  top.lastChild.style.background = color; top.append(el("span", r.problem + " · " + Math.round(r.duration_sec/60) + " min · " + r.hints + " hint(s)", "mute")); body.append(top);
-  const crit = { clarification:"Clarification", communication:"Communication", complexity:"Complexity", edge_cases:"Edge cases", adaptability:"Adaptability" };
-  body.append(el("h3", "Rubric"));
-  Object.entries(crit).forEach(([k, label]) => { const row = el("div", undefined, "row"); row.append(el("span", label, "mute")); row.firstChild.style.width = "110px";
-    const bar = el("div", undefined, "bar"), i = el("i"); i.style.width = (ev.scores[k] / 2 * 100) + "%"; bar.append(i); row.append(bar, el("b", ev.scores[k] + "/2")); body.append(row); });
-  if (ev.code_quality !== null) body.append(el("p", "Code quality: " + ev.code_quality + "/2 (reported separately)", "mute"));
-  if (ev.hint_penalty) body.append(el("p", "−1 point for using 3+ hints.", "mute"));
-  const list = (title, items) => { body.append(el("h3", title)); const ul = el("ul"); items.forEach(x => ul.append(el("li", x))); body.append(ul); };
-  list("Strengths", ev.strengths); list("To improve", ev.improvements); list("Study plan", rep.study_plan);
-  body.append(el("h3", "Model approach"), el("p", rep.model_approach));
-  if (rep.related && rep.related.length) list("Practice next", rep.related.map(x => x.title + " (" + x.difficulty + ")"));
-  const row = el("div", undefined, "row"); const dl = el("button", "Download transcript"); dl.onclick = async () => {
-    const s = await api("/api/session/" + r.session_id); const txt = s.transcript.map(t => t.role.toUpperCase() + ": " + t.content).join("\n\n");
-    const a = el("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain" })); a.download = "interview-" + r.session_id.slice(0, 6) + ".txt"; a.click(); };
-  const again = el("button", "New interview", "primary"); again.onclick = () => { $("score").classList.add("hidden"); lastResult = null; setBusy(false); show("setup"); };
-  const close = el("button", "Close"); close.onclick = () => $("score").classList.add("hidden");
-  row.append(dl, again, close); body.append(row); $("score").classList.remove("hidden");
-}
-
-/* ---- history ---- */
-async function showHistory() {
-  const d = await api("/api/history"), h = $("history"); h.replaceChildren(); show("history");
-  const s = d.stats; const top = el("div", undefined, "row");
-  [["Interviews", s.total], ["Average", s.average + "/10"], ["Best", s.best + "/10"]].forEach(([l, v]) => { const c = el("div", undefined, "card stat"); c.append(el("b", String(v)), el("span", l, "mute")); top.append(c); }); h.append(top);
-  if (!s.total) { h.append(el("p", "No interviews yet.", "mute")); return; }
-  const trend = el("div", undefined, "card"); trend.style.marginTop = "12px"; trend.append(el("h3", "Score trend"));
-  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 300 80"); svg.style.width = "100%";
-  const pts = s.recent.map((r, i) => [s.recent.length === 1 ? 150 : 10 + i * 280 / (s.recent.length - 1), 75 - r.total_score * 7]);
-  const line = document.createElementNS(NS, "polyline"); line.setAttribute("points", pts.map(p => p.join(",")).join(" ")); line.setAttribute("fill", "none"); line.setAttribute("stroke", "currentColor"); line.setAttribute("stroke-width", "2"); svg.append(line);
-  pts.forEach(p => { const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", p[0]); c.setAttribute("cy", p[1]); c.setAttribute("r", 3); c.setAttribute("fill", "currentColor"); svg.append(c); });
-  trend.append(svg); h.append(trend);
-  const tp = el("div", undefined, "card"); tp.style.marginTop = "12px"; tp.append(el("h3", "By topic"));
-  Object.entries(s.topics).forEach(([t, v]) => tp.append(el("div", t.replace(/_/g, " ") + " — avg " + v.average + "/10 over " + v.count + " interview(s)")));
-  h.append(tp);
-  const ls = el("div", undefined, "card"); ls.style.marginTop = "12px"; ls.append(el("h3", "All interviews"));
-  d.sessions.forEach(r => { const row = el("div", undefined, "row"); const b = el("button", r.problem_title); b.onclick = async () => { const f = await api("/api/session/" + r.session_id);
-      showScore({ scores: f.scores, report: f.report, problem: f.problem_title, duration_sec: f.duration_sec, hints: f.hints_used, session_id: f.session_id }); };
-    row.append(b, el("span", r.total_score + "/10 · " + r.verdict + " · " + r.difficulty + " · " + r.created_at.replace("T", " "), "mute")); ls.append(row); });
-  h.append(ls);
-}
-$("navHist").onclick = showHistory;
-$("navNew").onclick = () => { if (sid && !(lastResult && lastResult.session_id === sid) && !confirm("Leave the current interview?")) return; sid = null; lastResult = null; setBusy(false); show("setup"); };
-</script>
+<script src="/app.js"></script>
 </body>
 </html>

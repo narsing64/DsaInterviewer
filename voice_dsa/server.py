@@ -6,7 +6,7 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import db, supervisor
+from . import catalog, db, learn, supervisor
 from .llm import transcribe
 
 STATIC = Path(__file__).parent / "static"
@@ -36,10 +36,15 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path in ("/", "/index.html"):
             return self._send(200, (STATIC / "index.html").read_bytes(), "text/html; charset=utf-8")
+        if path in ("/app.css", "/app.js"):
+            ctype = "text/css" if path.endswith("css") else "text/javascript"
+            return self._send(200, (STATIC / path.lstrip("/")).read_bytes(), ctype + "; charset=utf-8")
+        if path == "/api/learn/catalog":
+            return self._send(200, {"subjects": catalog.public()})
         if path == "/api/topics":
             return self._send(200, supervisor.topics())
         if path == "/api/history":
-            return self._send(200, {"stats": db.stats(), "sessions": db.history()})
+            return self._send(200, {"stats": db.stats(), "sessions": db.history(), "quizzes": db.quiz_stats()})
         if path.startswith("/api/session/"):
             s = db.get_session(path.rsplit("/", 1)[1])
             return self._send(200 if s else 404, s or {"error": "not found"})
@@ -51,7 +56,15 @@ class Handler(BaseHTTPRequestHandler):
         try:
             req = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
             if self.path == "/api/start":
-                return self._send(200, supervisor.start(req.get("topic") or None, req.get("difficulty") or None))
+                return self._send(200, supervisor.start(req.get("topic") or None, req.get("difficulty") or None,
+                                                        req.get("voice") or "shubh"))
+            if self.path == "/api/learn/note":
+                return self._send(200, learn.note(req["subject"], req["topic"]))
+            if self.path == "/api/quiz/generate":
+                return self._send(200, learn.quiz(req["subject"], req["topic"], req.get("difficulty", "medium"), req.get("n", 5)))
+            if self.path == "/api/quiz/result":
+                db.save_quiz_result(req["subject"], req["topic"], req.get("difficulty", "medium"), int(req["score"]), int(req["total"]))
+                return self._send(200, {"ok": True})
             if self.path == "/api/turn":
                 text = req.get("text", "")
                 if req.get("audio"):

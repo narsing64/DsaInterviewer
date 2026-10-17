@@ -36,7 +36,7 @@ def _numbered(items: list) -> str:
 def presenter(state: dict) -> str:
     p = state["problem"]
     article = "an" if p["difficulty"][0] in "aeiou" else "a"
-    return (f"Hello, welcome to your mock interview. Today's problem is {p['title']}, {article} {p['difficulty']} "
+    return (f"Hi, I'm {state['interviewer']}, and I'll be your interviewer today. Let's get started. Today's problem is {p['title']}, {article} {p['difficulty']} "
             f"{p['topic'].replace('_', ' ')} problem. {p['description']} "
             "Feel free to ask clarifying questions, or tell me your approach when you're ready.")
 
