@@ -1,0 +1,4 @@
+.env
+sessions.db
+__pycache__/
+*.log

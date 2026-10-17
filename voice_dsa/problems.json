@@ -1,0 +1,308 @@
+{
+  "problems": [
+    {
+      "id": "two_sum",
+      "title": "Two Sum",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "description": "Given an array of integers nums and an integer target, return the indices of the two numbers such that they add up to target. You may assume each input has exactly one solution, and you may not use the same element twice.",
+      "constraints": "2 <= nums.length <= 10^4, -10^9 <= nums[i] <= 10^9, -10^9 <= target <= 10^9",
+      "optimal_approach": "hashmap, O(n) time, O(n) space — store each number's index as you iterate, check if target minus current number exists in the map",
+      "edge_cases": ["empty or single-element array", "duplicate numbers in array", "negative numbers", "no valid pair exists"],
+      "follow_up_probes": [
+        "What is the time complexity of your approach?",
+        "Can you solve it in a single pass instead of two passes?",
+        "What if there are multiple valid pairs, which one should you return?"
+      ]
+    },
+    {
+      "id": "group_anagrams",
+      "title": "Group Anagrams",
+      "difficulty": "medium",
+      "topic": "arrays",
+      "description": "Given an array of strings, group the anagrams together. You can return the answer in any order. An anagram is a word formed by rearranging the letters of another word.",
+      "constraints": "1 <= strs.length <= 10^4, 0 <= strs[i].length <= 100, strs[i] consists of lowercase English letters",
+      "optimal_approach": "hashmap with sorted string as key, O(n * k log k) time where k is max string length, O(n*k) space",
+      "edge_cases": ["empty strings in array", "single character strings", "all strings identical", "no anagrams exist (all unique groups)"],
+      "follow_up_probes": [
+        "Why did you choose sorting the string as the key, are there alternatives?",
+        "What's the time complexity if strings are very long?",
+        "Can you avoid sorting and still group them correctly?"
+      ]
+    },
+    {
+      "id": "top_k_frequent",
+      "title": "Top K Frequent Elements",
+      "difficulty": "medium",
+      "topic": "arrays",
+      "description": "Given an integer array and an integer k, return the k most frequent elements. You may return the answer in any order.",
+      "constraints": "1 <= nums.length <= 10^5, k is in range [1, number of distinct elements]",
+      "optimal_approach": "hashmap for counting + heap or bucket sort, O(n log k) with heap or O(n) with bucket sort",
+      "edge_cases": ["k equals total distinct elements", "all elements have same frequency", "single element array"],
+      "follow_up_probes": [
+        "Can you do better than O(n log n) sorting?",
+        "How would bucket sort help here?",
+        "What if k is very close to n, does your approach still make sense?"
+      ]
+    },
+    {
+      "id": "product_except_self",
+      "title": "Product of Array Except Self",
+      "difficulty": "medium",
+      "topic": "arrays",
+      "description": "Given an integer array nums, return an array where each element is the product of all elements except itself. You must do this without using division and in O(n) time.",
+      "constraints": "2 <= nums.length <= 10^5, product of any prefix/suffix fits in 32-bit integer",
+      "optimal_approach": "prefix and suffix product arrays, O(n) time, O(1) extra space if output array doesn't count",
+      "edge_cases": ["array contains zero", "array contains multiple zeros", "negative numbers"],
+      "follow_up_probes": [
+        "Why can't you use division here, what breaks?",
+        "Can you do this in O(1) extra space, not counting the output array?",
+        "What happens to your approach if there are zeros in the array?"
+      ]
+    },
+
+    {
+      "id": "max_subarray",
+      "title": "Maximum Subarray",
+      "difficulty": "easy",
+      "topic": "sliding_window",
+      "description": "Given an integer array, find the contiguous subarray with the largest sum and return that sum.",
+      "constraints": "1 <= nums.length <= 10^5, -10^4 <= nums[i] <= 10^4",
+      "optimal_approach": "Kadane's algorithm, O(n) time, O(1) space — track running sum, reset to 0 if it goes negative",
+      "edge_cases": ["all negative numbers", "single element array", "all elements are the same"],
+      "follow_up_probes": [
+        "What happens if all numbers in the array are negative?",
+        "Can you explain why you reset the running sum to zero?",
+        "What's the space complexity of your solution?"
+      ]
+    },
+    {
+      "id": "longest_substring_no_repeat",
+      "title": "Longest Substring Without Repeating Characters",
+      "difficulty": "medium",
+      "topic": "sliding_window",
+      "description": "Given a string, find the length of the longest substring without repeating characters.",
+      "constraints": "0 <= s.length <= 5 * 10^4, s consists of English letters, digits, symbols, and spaces",
+      "optimal_approach": "sliding window with hashmap/set tracking last seen index, O(n) time, O(min(n, charset size)) space",
+      "edge_cases": ["empty string", "all unique characters", "all same character", "single character string"],
+      "follow_up_probes": [
+        "How do you decide when to shrink the window from the left?",
+        "What data structure are you using to track characters in the window, why that one?",
+        "What's the time complexity, and can it be improved?"
+      ]
+    },
+    {
+      "id": "min_window_substring",
+      "title": "Minimum Window Substring",
+      "difficulty": "hard",
+      "topic": "sliding_window",
+      "description": "Given two strings s and t, return the minimum window substring of s such that every character in t (including duplicates) is included in the window. If no such substring exists, return an empty string.",
+      "constraints": "1 <= s.length, t.length <= 10^5, s and t consist of uppercase and lowercase English letters",
+      "optimal_approach": "sliding window with two hashmaps tracking required vs current counts, O(n) time, O(charset size) space",
+      "edge_cases": ["t longer than s", "no valid window exists", "s equals t", "duplicate characters in t"],
+      "follow_up_probes": [
+        "How do you know when your current window satisfies all the requirements of t?",
+        "Why does the two-pointer approach work in linear time here?",
+        "What if t has duplicate characters, how does your approach handle that?"
+      ]
+    },
+    {
+      "id": "longest_repeating_char_replacement",
+      "title": "Longest Repeating Character Replacement",
+      "difficulty": "medium",
+      "topic": "sliding_window",
+      "description": "Given a string and an integer k, you can replace up to k characters with any other character. Return the length of the longest substring containing the same letter after the replacements.",
+      "constraints": "1 <= s.length <= 10^5, s consists of uppercase English letters, 0 <= k <= s.length",
+      "optimal_approach": "sliding window tracking max frequency character in window, valid if (window size - max freq) <= k, O(n) time",
+      "edge_cases": ["k equals string length", "k is zero", "all characters already same"],
+      "follow_up_probes": [
+        "How do you decide if the current window is still valid?",
+        "Why don't you need to decrease the max frequency count when shrinking the window?",
+        "What's the intuition behind window size minus max frequency being less than or equal to k?"
+      ]
+    },
+
+    {
+      "id": "max_depth_binary_tree",
+      "title": "Maximum Depth of Binary Tree",
+      "difficulty": "easy",
+      "topic": "trees",
+      "description": "Given the root of a binary tree, return its maximum depth — the number of nodes along the longest path from root to the farthest leaf.",
+      "constraints": "number of nodes in range [0, 10^4], -100 <= Node.val <= 100",
+      "optimal_approach": "recursive DFS, O(n) time, O(h) space where h is height (recursion stack)",
+      "edge_cases": ["empty tree (null root)", "single node tree", "skewed tree (all left or all right children)"],
+      "follow_up_probes": [
+        "Can you solve this iteratively instead of recursively?",
+        "What's the space complexity in the worst case, like a skewed tree?",
+        "How would you modify this to find minimum depth instead?"
+      ]
+    },
+    {
+      "id": "level_order_traversal",
+      "title": "Binary Tree Level Order Traversal",
+      "difficulty": "medium",
+      "topic": "trees",
+      "description": "Given the root of a binary tree, return the level order traversal of its nodes' values, grouped by level, from left to right.",
+      "constraints": "number of nodes in range [0, 2000], -1000 <= Node.val <= 1000",
+      "optimal_approach": "BFS using a queue, process level by level, O(n) time, O(n) space for the queue",
+      "edge_cases": ["empty tree", "single node tree", "tree with only left or only right children at every level"],
+      "follow_up_probes": [
+        "Why did you choose BFS over DFS for this problem?",
+        "How do you keep track of which level each node belongs to?",
+        "What's the maximum size your queue can grow to?"
+      ]
+    },
+    {
+      "id": "lowest_common_ancestor",
+      "title": "Lowest Common Ancestor of a Binary Tree",
+      "difficulty": "medium",
+      "topic": "trees",
+      "description": "Given a binary tree and two nodes p and q, find their lowest common ancestor (LCA) — the lowest node that has both p and q as descendants.",
+      "constraints": "number of nodes in range [2, 10^5], all node values are unique, p and q exist in the tree",
+      "optimal_approach": "recursive DFS, if current node is p or q return it, otherwise recurse left and right, O(n) time, O(h) space",
+      "edge_cases": ["one node is an ancestor of the other", "p and q are the same node", "p or q is the root"],
+      "follow_up_probes": [
+        "What does it mean when both your left and right recursive calls return non-null?",
+        "How would this change if it were a binary search tree instead of a regular binary tree?",
+        "What's your space complexity in the worst case?"
+      ]
+    },
+    {
+      "id": "validate_bst",
+      "title": "Validate Binary Search Tree",
+      "difficulty": "medium",
+      "topic": "trees",
+      "description": "Given the root of a binary tree, determine if it is a valid binary search tree (BST). A valid BST has all left descendants less than the node, all right descendants greater than the node, and both subtrees must also be valid BSTs.",
+      "constraints": "number of nodes in range [1, 10^4], -2^31 <= Node.val <= 2^31 - 1",
+      "optimal_approach": "recursive DFS passing down a valid (min, max) range for each node, O(n) time, O(h) space",
+      "edge_cases": ["single node tree", "duplicate values", "very deep skewed tree causing integer range edge cases"],
+      "follow_up_probes": [
+        "Why is it not enough to just compare each node with its immediate children?",
+        "How are you tracking the valid range as you recurse deeper?",
+        "What would happen with duplicate values, is your solution handling that correctly?"
+      ]
+    },
+
+    {
+      "id": "binary_search",
+      "title": "Binary Search",
+      "difficulty": "easy",
+      "topic": "binary_search",
+      "description": "Given a sorted array of integers and a target value, return the index of target if found, otherwise return -1. Must run in O(log n) time.",
+      "constraints": "1 <= nums.length <= 10^4, array is sorted in ascending order, all values are unique",
+      "optimal_approach": "standard binary search with two pointers, O(log n) time, O(1) space",
+      "edge_cases": ["target not in array", "single element array", "target is first or last element"],
+      "follow_up_probes": [
+        "How do you avoid integer overflow when calculating the middle index?",
+        "What's the time complexity and why is it logarithmic?",
+        "What changes if the array has duplicate values?"
+      ]
+    },
+    {
+      "id": "search_rotated_array",
+      "title": "Search in Rotated Sorted Array",
+      "difficulty": "medium",
+      "topic": "binary_search",
+      "description": "Given a sorted array that has been rotated at an unknown pivot, and a target value, search for target and return its index, or -1 if not found. Must run in O(log n) time.",
+      "constraints": "1 <= nums.length <= 5000, all values are unique, array was originally sorted then rotated",
+      "optimal_approach": "modified binary search, determine which half is properly sorted at each step, O(log n) time, O(1) space",
+      "edge_cases": ["array not rotated at all", "array rotated at every possible pivot point", "single element array", "target not present"],
+      "follow_up_probes": [
+        "How do you determine which half of the array is sorted at each step?",
+        "What happens to your logic if the array isn't rotated at all?",
+        "Can you walk through how you decide which half to search next?"
+      ]
+    },
+    {
+      "id": "find_min_rotated_array",
+      "title": "Find Minimum in Rotated Sorted Array",
+      "difficulty": "medium",
+      "topic": "binary_search",
+      "description": "Given a rotated sorted array with unique elements, find the minimum element. Must run in O(log n) time.",
+      "constraints": "1 <= nums.length <= 5000, all integers are unique, originally sorted then rotated 1 to n times",
+      "optimal_approach": "binary search comparing mid element to rightmost element to decide which half contains the minimum, O(log n) time",
+      "edge_cases": ["array not rotated", "rotated at every position", "single element array", "two element array"],
+      "follow_up_probes": [
+        "Why do you compare the middle element with the rightmost element specifically?",
+        "What happens to your search range when nums[mid] is greater than nums[right]?",
+        "Does your solution work correctly if the array isn't rotated at all?"
+      ]
+    },
+    {
+      "id": "koko_eating_bananas",
+      "title": "Koko Eating Bananas",
+      "difficulty": "medium",
+      "topic": "binary_search",
+      "description": "Koko has piles of bananas and h hours to eat them all. She can decide her eating speed k bananas per hour. Each hour she chooses a pile and eats up to k bananas from it. Find the minimum integer k such that she can eat all bananas within h hours.",
+      "constraints": "1 <= piles.length <= 10^4, piles.length <= h <= 10^9, 1 <= piles[i] <= 10^9",
+      "optimal_approach": "binary search on the answer (eating speed k), check feasibility for each candidate speed, O(n log m) where m is max pile size",
+      "edge_cases": ["h exactly equals number of piles", "single pile", "very large pile sizes"],
+      "follow_up_probes": [
+        "Why are you binary searching on the eating speed instead of the array indices?",
+        "How do you check if a given speed k is feasible within h hours?",
+        "What's the upper and lower bound of your search range for k?"
+      ]
+    },
+
+    {
+      "id": "climbing_stairs",
+      "title": "Climbing Stairs",
+      "difficulty": "easy",
+      "topic": "dynamic_programming",
+      "description": "You are climbing a staircase with n steps. Each time you can climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
+      "constraints": "1 <= n <= 45",
+      "optimal_approach": "DP, ways(n) = ways(n-1) + ways(n-2), essentially Fibonacci, O(n) time, can be O(1) space",
+      "edge_cases": ["n equals 1", "n equals 2", "very large n approaching constraint limit"],
+      "follow_up_probes": [
+        "Why does this problem reduce to a Fibonacci-like recurrence?",
+        "Can you solve this with O(1) space instead of storing the full DP array?",
+        "What's the base case and why?"
+      ]
+    },
+    {
+      "id": "coin_change",
+      "title": "Coin Change",
+      "difficulty": "medium",
+      "topic": "dynamic_programming",
+      "description": "Given an array of coin denominations and a target amount, return the fewest number of coins needed to make up that amount. If it's not possible, return -1.",
+      "constraints": "1 <= coins.length <= 12, 1 <= coins[i] <= 2^31 - 1, 0 <= amount <= 10^4",
+      "optimal_approach": "bottom-up DP, dp[i] = min coins needed for amount i, O(amount * coins.length) time, O(amount) space",
+      "edge_cases": ["amount is zero", "no combination of coins can make the amount", "single coin denomination"],
+      "follow_up_probes": [
+        "What does dp[i] represent in your solution?",
+        "Why do you initialize the DP array with a large value or infinity?",
+        "How would you also return which coins were used, not just the count?"
+      ]
+    },
+    {
+      "id": "house_robber",
+      "title": "House Robber",
+      "difficulty": "medium",
+      "topic": "dynamic_programming",
+      "description": "You are a robber planning to rob houses along a street. Each house has a certain amount of money. You cannot rob two adjacent houses. Find the maximum amount you can rob without alerting the police.",
+      "constraints": "1 <= nums.length <= 100, 0 <= nums[i] <= 400",
+      "optimal_approach": "DP, dp[i] = max(dp[i-1], dp[i-2] + nums[i]), O(n) time, can be O(1) space with two variables",
+      "edge_cases": ["single house", "two houses", "all houses have zero money"],
+      "follow_up_probes": [
+        "What does your DP state represent at each index?",
+        "Can you optimize the space complexity to O(1)?",
+        "How would this change if the houses were arranged in a circle instead of a line?"
+      ]
+    },
+    {
+      "id": "longest_increasing_subsequence",
+      "title": "Longest Increasing Subsequence",
+      "difficulty": "medium",
+      "topic": "dynamic_programming",
+      "description": "Given an integer array, return the length of the longest strictly increasing subsequence.",
+      "constraints": "1 <= nums.length <= 2500, -10^4 <= nums[i] <= 10^4",
+      "optimal_approach": "DP with O(n^2) using dp[i] = length of LIS ending at i, can be optimized to O(n log n) using binary search with patience sorting",
+      "edge_cases": ["array sorted in decreasing order (LIS length 1)", "array sorted in increasing order (LIS equals array length)", "all elements equal"],
+      "follow_up_probes": [
+        "What does dp[i] represent in your O(n squared) solution?",
+        "Can you describe how the O(n log n) approach using binary search works?",
+        "Is the array you maintain in the optimized approach always a valid subsequence?"
+      ]
+    }
+  ]
+}
