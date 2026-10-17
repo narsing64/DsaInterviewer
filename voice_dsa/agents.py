@@ -22,6 +22,16 @@ def _tail(state: dict, n: int = 14) -> str:
     return "\n".join(f"{t['role'].capitalize()}: {t['content']}" for t in state["transcript"][-n:])
 
 
+def _said(state: dict, n: int = 12) -> list:
+    """The candidate's own spoken/typed statements (code submissions excluded)."""
+    return [t["content"] for t in state["transcript"]
+            if t["role"] == "candidate" and not t["content"].startswith("[submitted code]")][-n:]
+
+
+def _numbered(items: list) -> str:
+    return "\n".join(f"{i + 1}. {x}" for i, x in enumerate(items)) or "(nothing yet)"
+
+
 # ── Presenter ───────────────────────────────────────────────────────────────
 def presenter(state: dict) -> str:
     p = state["problem"]
@@ -38,16 +48,20 @@ ANALYST_DEFAULT = {"intent": "probe_answer", "algorithm": "", "complexity": "", 
 def analyst(state: dict, text: str) -> dict:
     last_q = next((t["content"] for t in reversed(state["transcript"]) if t["role"] == "interviewer"), "")
     system = (
-        "You analyse one candidate utterance from a spoken coding interview. Return JSON only with keys: "
-        '"intent" (one of: clarifying_question, approach, probe_answer, hint_request, wants_to_end, skip_code, other), '
-        '"algorithm" (technique they named, else ""), "complexity" (time complexity they stated, e.g. "O(n)", else ""), '
-        '"edge_cases" (list of specific edge cases they named, else []), "confidence" (high, medium or low).\n'
-        "intent rules: clarifying_question = asking the interviewer something about the problem; approach = first explanation "
-        "of how they will solve it; probe_answer = answering the interviewer's last question; hint_request = asks for a hint "
-        "or says they are stuck; wants_to_end = wants to stop or finish; skip_code = does not want to write code."
+        "You analyse a candidate in a spoken coding interview. Return JSON only with keys: "
+        '"intent" (of the LATEST utterance only; one of: clarifying_question, approach, probe_answer, hint_request, wants_to_end, skip_code, other), '
+        '"algorithm" (technique they have named ANYWHERE in their statements, else ""), '
+        '"complexity" (time/space complexity they have stated ANYWHERE, e.g. "O(n) time, O(n) space", else ""), '
+        '"edge_cases" (every specific edge case they have named ANYWHERE, else []), "confidence" (high, medium or low).\n'
+        "Signals are CUMULATIVE: read all their statements, and keep anything they said earlier. "
+        "intent rules: if the latest utterance explains how they would solve the problem (names a technique or gives steps) "
+        "it is approach, even if it also contains a question; clarifying_question = ONLY asking the interviewer about the "
+        "problem's inputs, outputs or constraints; probe_answer = answering the interviewer's last question; hint_request = "
+        "asks for a hint or says they are stuck; wants_to_end = wants to stop; skip_code = does not want to write code."
     )
     user = (f"Problem: {state['problem']['description']}\nInterview stage: {state['stage']}\n"
-            f"Interviewer's last message: {last_q}\nCandidate said: \"{text}\"")
+            f"Interviewer's last message: {last_q}\n\nAll candidate statements so far (oldest first):\n"
+            f"{_numbered(_said(state))}\n\nLATEST utterance: \"{text}\"")
     out = chat_json(system, user, ANALYST_DEFAULT)
     return {**ANALYST_DEFAULT, **out}
 
@@ -65,15 +79,23 @@ def clarifier(state: dict, question: str) -> str:
 # ── Prober ──────────────────────────────────────────────────────────────────
 def prober(state: dict) -> str:
     p = state["problem"]
-    system = ("You are a technical interviewer. " + SPOKEN + " Ask exactly ONE new follow-up question in one or two "
-              "sentences. Never repeat or rephrase an earlier question. Return only the question.")
+    said = _said(state)
+    latest = said[-1] if said else ""
+    system = ("You are a technical interviewer. " + SPOKEN + " The candidate just answered. First react to ONE specific thing "
+              "they actually said (paraphrase it briefly), then ask exactly ONE follow-up that builds on their answer. "
+              "Never re-ask anything already answered or covered, and never ask something their own words already answer. "
+              "Two or three sentences total. Return only what you will say.")
+    covered = (f"algorithm={state['algorithm'] or 'none'}; complexity={state['complexity'] or 'none'}; "
+               f"edge cases={', '.join(state['edge_cases']) or 'none'}")
     user = (
         f"Problem: {p['description']}\nReference approach (secret): {p['optimal_approach']}\n"
-        f"Known edge cases (secret): {', '.join(p['edge_cases'])}\n\nConversation so far:\n{_tail(state)}\n\n"
-        f"Signals so far: algorithm={state['algorithm'] or 'none'}, complexity={state['complexity'] or 'none'}, "
-        f"edge cases={', '.join(state['edge_cases']) or 'none'}.\nThis is follow-up {state['probes'] + 1}.\n"
-        "Priority (skip what is already covered): 1) time and space complexity, 2) a specific edge case, "
-        "3) a gap or assumption in their approach, 4) a better or optimised approach, 5) trace a small example."
+        f"Known edge cases (secret): {', '.join(p['edge_cases'])}\n\n"
+        f"Everything the candidate has said (oldest first):\n{_numbered(said)}\n\n"
+        f"Conversation so far:\n{_tail(state)}\n\n"
+        f"ALREADY COVERED by the candidate (do not ask again): {covered}\n"
+        f"Their LATEST answer: \"{latest}\"\nThis is follow-up {state['probes'] + 1}.\n"
+        "Choose what to probe next, skipping anything covered: complexity not yet stated; then a specific edge case; "
+        "then a gap, wrong claim or assumption in what they said; then a better approach; then trace a small example."
     )
     return chat(system, user)
 
@@ -127,11 +149,29 @@ def evaluator(state: dict) -> dict:
               '"strengths" (2-3 short specific strings), "improvements" (2-3 short specific strings). ' + RUBRIC)
     reviews = state["code_reviews"]
     code_note = (f"Code review results: {json.dumps(reviews[-1])}" if reviews else "No code was submitted.")
+    said = _said(state, 40)
     user = (f"Problem: {state['problem']['title']} - {state['problem']['description']}\n"
-            f"Hints requested: {state['hints']}\n{code_note}\n\nTranscript:\n{_tail(state, 60)}")
+            f"Hints requested: {state['hints']}\n{code_note}\n\n"
+            f"THE CANDIDATE'S OWN WORDS, verbatim (this is the evidence; credit anything stated here, even if brief "
+            f"or said early):\n{_numbered(said)}\n\n"
+            f"Signals already detected: algorithm={state['algorithm'] or 'none'}; complexity={state['complexity'] or 'none'}; "
+            f"edge cases={', '.join(state['edge_cases']) or 'none'}; "
+            f"clarifying questions asked={state['clarifying_questions']}.\n\n"
+            f"Full transcript:\n{_tail(state, 60)}")
     raw = chat_json(system, user, {})
     s = raw.get("scores", {}) if isinstance(raw.get("scores"), dict) else {}
     scores = {k: max(0, min(2, int(s.get(k, 1) or 0))) for k in CRITERIA}
+    # floors from signals the Analyst already caught, so a model slip can't erase evidence
+    if state["complexity"]:
+        scores["complexity"] = max(scores["complexity"], 1)
+    if state["edge_cases"]:
+        scores["edge_cases"] = max(scores["edge_cases"], 1 if len(state["edge_cases"]) == 1 else 2)
+    if state["algorithm"]:
+        scores["communication"] = max(scores["communication"], 1)
+    if state["clarifying_questions"]:
+        scores["clarification"] = max(scores["clarification"], 1)
+    if state["probes"] >= 1 and said:
+        scores["adaptability"] = max(scores["adaptability"], 1)
     total = sum(scores.values())
     penalty = 1 if state["hints"] >= 3 else 0
     total = max(0, total - penalty)

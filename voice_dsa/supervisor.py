@@ -94,7 +94,9 @@ def finish(state: dict, lead: str = "") -> dict:
 
 
 def turn(session_id: str, text: str, code: str = "", end: bool = False) -> dict:
-    state = SESSIONS[session_id]
+    state = SESSIONS.get(session_id)
+    if state is None:
+        raise ValueError("This interview session expired (the server restarted). Please start a new interview.")
     if state["stage"] == "done":
         return {"reply": "", "state": _snapshot(state)}
     voice = state["voice"]

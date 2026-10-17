@@ -121,7 +121,7 @@ async function api(path, body, retry = true) {
   const d = await r.json(); if (d.error) throw new Error(d.error); return d;
 }
 function show(which) { ["setup","interview","history"].forEach(s => $(s).classList.toggle("hidden", s !== which)); }
-function setBusy(b) { busy = b; ["send","hint","end","submitCode"].forEach(i => $(i).disabled = b); $("status").textContent = b ? "Thinking…" : ""; }
+function setBusy(b) { busy = b; ["send","hint","end","submitCode","mic","text"].forEach(i => $(i).disabled = b); $("status").textContent = b ? "Thinking…" : ""; }
 
 /* ---- setup ---- */
 api("/api/topics").then(d => d.topics.forEach(t => { const o = el("option", t.replace(/_/g, " ")); o.value = t; $("topic").appendChild(o); }));
